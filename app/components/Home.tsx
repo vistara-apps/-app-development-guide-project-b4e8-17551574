@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface HomeProps {
   onStartGame: (gameId: string) => void;
@@ -8,6 +9,7 @@ interface HomeProps {
 }
 
 export function Home({ onStartGame, setActiveTab }: HomeProps) {
+  const router = useRouter();
   const [opponentFid, setOpponentFid] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
@@ -37,6 +39,10 @@ export function Home({ onStartGame, setActiveTab }: HomeProps) {
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handlePaymentClick = () => {
+    router.push('/payment');
   };
 
   return (
@@ -79,7 +85,7 @@ export function Home({ onStartGame, setActiveTab }: HomeProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-md max-w-2xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-md max-w-2xl mx-auto">
         <div className="card text-center space-y-sm">
           <div className="text-3xl">🎮</div>
           <h4 className="heading">Quick Play</h4>
@@ -105,6 +111,20 @@ export function Home({ onStartGame, setActiveTab }: HomeProps) {
             className="btn-secondary w-full"
           >
             View Rankings
+          </button>
+        </div>
+
+        <div className="card text-center space-y-sm">
+          <div className="text-3xl">💳</div>
+          <h4 className="heading">Support Us</h4>
+          <p className="caption">
+            Make a small donation with USDC on Base
+          </p>
+          <button 
+            onClick={handlePaymentClick}
+            className="btn-secondary w-full bg-accent/10 text-accent hover:bg-accent/20"
+          >
+            Make Payment
           </button>
         </div>
       </div>
@@ -133,3 +153,4 @@ export function Home({ onStartGame, setActiveTab }: HomeProps) {
     </div>
   );
 }
+
