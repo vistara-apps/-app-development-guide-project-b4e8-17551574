@@ -1,14 +1,72 @@
 {
   "name": "Farcaster RPS Showdown",
-  "description": "Farcaster RPS Showdown is a Base Mini App built with Zara.",
+  "short_name": "RPS Showdown",
+  "description": "Challenge your Farcaster friends to Rock, Paper, Scissors right in your feed.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4F46E5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/maskable-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["games", "entertainment", "social"],
+  "screenshots": [
+    {
+      "src": "/screenshot-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Home Screen"
+    },
+    {
+      "src": "/screenshot-2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Game Screen"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start New Game",
+      "url": "/?tab=game",
+      "description": "Start a new Rock Paper Scissors game"
+    },
+    {
+      "name": "View Leaderboard",
+      "url": "/?tab=leaderboard",
+      "description": "Check the leaderboard rankings"
+    }
+  ],
   "image": "https://dummyimage.com/1200x628/0a0b0d/ffffff.png&text=OG",
   "external_url": "https://b4e88840-b6f2-4741-acfa-e8ffcf03572a.vistara.dev",
   "properties": {
     "app": {
       "name": "Farcaster RPS Showdown",
-      "description": "Farcaster RPS Showdown is a Base Mini App built with Zara.",
+      "description": "Challenge your Farcaster friends to Rock, Paper, Scissors right in your feed.",
       "url": "https://b4e88840-b6f2-4741-acfa-e8ffcf03572a.vistara.dev",
-      "icon": "https://0co.to/images/zara-2.png"
+      "icon": "/android-chrome-512x512.png"
     }
   }
 }

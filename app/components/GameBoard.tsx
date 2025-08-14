@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { MoveSelector } from "./MoveSelector";
+import { Card } from "./ui/Card";
+import { Button } from "./ui/Button";
+import { StatusMessage } from "./ui/StatusMessage";
 
 interface GameBoardProps {
   gameId?: string;
@@ -18,20 +22,37 @@ interface GameState {
   winnerFid?: string;
 }
 
+type Move = "rock" | "paper" | "scissors";
+
 export function GameBoard({ gameId, onGameStart, onMakeMove }: GameBoardProps) {
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [selectedMove, setSelectedMove] = useState<string>("");
+  const [selectedMove, setSelectedMove] = useState<Move | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
   const moves = [
-    { id: "rock", name: "Rock", emoji: "🗿", beats: "scissors" },
-    { id: "paper", name: "Paper", emoji: "📄", beats: "rock" },
-    { id: "scissors", name: "Scissors", emoji: "✂️", beats: "paper" },
+    { id: "rock" as Move, name: "Rock", emoji: "🪨", beats: "scissors" },
+    { id: "paper" as Move, name: "Paper", emoji: "📄", beats: "rock" },
+    { id: "scissors" as Move, name: "Scissors", emoji: "✂️", beats: "paper" },
   ];
 
   useEffect(() => {
     if (gameId) {
       fetchGameState();
+      
+      // Set up polling for game state updates
+      const interval = setInterval(() => {
+        fetchGameState();
+      }, 5000); // Poll every 5 seconds
+      
+      setRefreshInterval(interval);
+      
+      return () => {
+        if (refreshInterval) {
+          clearInterval(refreshInterval);
+        }
+      };
     }
   }, [gameId]);
 
@@ -39,25 +60,32 @@ export function GameBoard({ gameId, onGameStart, onMakeMove }: GameBoardProps) {
     if (!gameId) return;
     
     try {
+      setError(null);
       const response = await fetch(`/api/game/${gameId}`);
       if (response.ok) {
         const game = await response.json();
         setGameState(game);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "Failed to fetch game state");
       }
     } catch (error) {
       console.error('Error fetching game state:', error);
+      setError("Network error. Please try again.");
     }
   };
 
-  const handleMoveSelection = async (move: string) => {
+  const handleMoveSelection = async (move: Move) => {
     setSelectedMove(move);
     setIsLoading(true);
+    setError(null);
     
     try {
       await onMakeMove(move);
       await fetchGameState();
     } catch (error) {
       console.error('Error making move:', error);
+      setError("Failed to make move. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -72,114 +100,191 @@ export function GameBoard({ gameId, onGameStart, onMakeMove }: GameBoardProps) {
   };
 
   const getMoveEmoji = (move?: string) => {
-    const moveData = moves.find(m => m.id === move);
+    const moveData = moves.find(m => m.id === move as Move);
     return moveData ? moveData.emoji : "❓";
+  };
+
+  const getWinningMove = (): Move | null => {
+    if (!gameState || gameState.status !== 'finished' || !gameState.initiatorMove || !gameState.opponentMove) {
+      return null;
+    }
+    
+    if (gameState.initiatorMove === gameState.opponentMove) {
+      return null; // Tie
+    }
+    
+    const initiatorMove = gameState.initiatorMove as Move;
+    const opponentMove = gameState.opponentMove as Move;
+    
+    const moveData = moves.find(m => m.id === initiatorMove);
+    if (moveData && moveData.beats === opponentMove) {
+      return initiatorMove;
+    } else {
+      return opponentMove;
+    }
   };
 
   if (!gameId) {
     return (
-      <div className="card text-center space-y-lg max-w-md mx-auto">
-        <div className="text-4xl">🎮</div>
-        <h3 className="heading">No Active Game</h3>
-        <p className="body text-text-secondary">
+      <Card className="text-center space-y-lg max-w-md mx-auto animate-fade-in">
+        <div className="text-4xl mb-4">🎮</div>
+        <h3 className="heading-text mb-2">No Active Game</h3>
+        <p className="body-text text-text-secondary mb-4">
           Start a new game from the home screen to begin playing!
         </p>
-      </div>
+        <Button 
+          variant="primary" 
+          onClick={() => window.location.href = "/"}
+          fullWidth
+        >
+          Go to Home
+        </Button>
+      </Card>
     );
   }
 
   if (!gameState) {
     return (
-      <div className="card text-center space-y-md max-w-md mx-auto">
-        <div className="animate-spin text-2xl">⏳</div>
-        <p className="body">Loading game...</p>
-      </div>
+      <Card className="text-center space-y-md max-w-md mx-auto animate-fade-in">
+        <div className="flex items-center justify-center py-6">
+          <div className="animate-spin text-2xl mr-3">⏳</div>
+          <p className="body-text">Loading game...</p>
+        </div>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-lg animate-fade-in">
-      <div className="card text-center space-y-md max-w-lg mx-auto">
-        <h3 className="heading">Game #{gameState.gameId.slice(0, 8)}</h3>
+      {error && (
+        <StatusMessage 
+          variant="error" 
+          className="max-w-lg mx-auto mb-4"
+          dismissible
+          onDismiss={() => setError(null)}
+        >
+          {error}
+        </StatusMessage>
+      )}
+      
+      <Card className="text-center space-y-md max-w-lg mx-auto">
+        <div className="flex justify-between items-center border-b border-border-light pb-4 mb-4">
+          <h3 className="heading-text">Game #{gameState.gameId.slice(0, 8)}</h3>
+          <div className="status-badge status-badge-info">
+            {gameState.status === 'waiting' ? 'Waiting' : 
+             gameState.status === 'playing' ? 'In Progress' : 'Finished'}
+          </div>
+        </div>
         
         <div className="flex justify-between items-center py-md">
-          <div className="text-center space-y-sm">
-            <div className="text-2xl">{getMoveEmoji(gameState.initiatorMove)}</div>
-            <p className="caption">Player {gameState.initiatorFid}</p>
-            <p className="text-xs text-text-secondary">
-              {gameState.initiatorMove ? "Move made" : "Waiting..."}
-            </p>
+          <div className="text-center space-y-sm relative">
+            <div className="text-3xl mb-2 transition-all duration-base">
+              {gameState.initiatorMove ? (
+                <span className="animate-bounce-scale">{getMoveEmoji(gameState.initiatorMove)}</span>
+              ) : (
+                <span className="opacity-50">❓</span>
+              )}
+            </div>
+            <div className="caption-text font-medium">Player {gameState.initiatorFid}</div>
+            <div className="text-xs text-text-secondary mt-1">
+              {gameState.initiatorMove ? (
+                <span className="status-badge status-badge-success">Move made</span>
+              ) : (
+                <span className="status-badge">Waiting...</span>
+              )}
+            </div>
           </div>
           
-          <div className="text-3xl text-text-secondary">VS</div>
+          <div className="text-3xl text-text-secondary font-bold">VS</div>
           
           <div className="text-center space-y-sm">
-            <div className="text-2xl">{getMoveEmoji(gameState.opponentMove)}</div>
-            <p className="caption">Player {gameState.opponentFid}</p>
-            <p className="text-xs text-text-secondary">
-              {gameState.opponentMove ? "Move made" : "Waiting..."}
-            </p>
+            <div className="text-3xl mb-2 transition-all duration-base">
+              {gameState.opponentMove ? (
+                <span className="animate-bounce-scale">{getMoveEmoji(gameState.opponentMove)}</span>
+              ) : (
+                <span className="opacity-50">❓</span>
+              )}
+            </div>
+            <div className="caption-text font-medium">Player {gameState.opponentFid}</div>
+            <div className="text-xs text-text-secondary mt-1">
+              {gameState.opponentMove ? (
+                <span className="status-badge status-badge-success">Move made</span>
+              ) : (
+                <span className="status-badge">Waiting...</span>
+              )}
+            </div>
           </div>
         </div>
 
         {gameState.status === 'finished' && (
-          <div className="bg-accent/10 border border-accent/20 rounded-lg p-md">
-            <p className="heading text-accent">{getWinnerMessage()}</p>
-          </div>
+          <StatusMessage 
+            variant={gameState.winnerFid ? "success" : "info"}
+            className="mt-4"
+          >
+            <p className="font-medium">{getWinnerMessage()}</p>
+          </StatusMessage>
         )}
-      </div>
+      </Card>
 
       {gameState.status === 'playing' && (
-        <div className="card max-w-lg mx-auto space-y-lg">
-          <h4 className="heading text-center">Choose Your Move</h4>
-          
-          <div className="grid grid-cols-3 gap-md">
-            {moves.map((move) => (
-              <button
-                key={move.id}
-                onClick={() => handleMoveSelection(move.id)}
-                disabled={isLoading || selectedMove !== ""}
-                className={`move-selector ${move.id} ${
-                  selectedMove === move.id ? "selected" : ""
-                }`}
-              >
-                <div className="text-4xl mb-2">{move.emoji}</div>
-                <div className="font-medium">{move.name}</div>
-              </button>
-            ))}
-          </div>
+        <Card className="max-w-lg mx-auto space-y-lg">
+          <MoveSelector
+            selectedMove={selectedMove}
+            onMoveSelect={handleMoveSelection}
+            disabled={isLoading || selectedMove !== null}
+            size="lg"
+          />
 
-          {selectedMove && (
-            <div className="text-center">
-              <p className="caption text-accent">
-                You selected {moves.find(m => m.id === selectedMove)?.name}!
-              </p>
-              <p className="text-xs text-text-secondary mt-1">
-                Waiting for opponent...
+          {isLoading && (
+            <div className="text-center animate-pulse">
+              <p className="text-text-secondary">
+                Submitting your move...
               </p>
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {gameState.status === 'waiting' && (
-        <div className="card text-center space-y-md max-w-md mx-auto">
-          <div className="text-3xl">⏳</div>
-          <h4 className="heading">Waiting for Opponent</h4>
-          <p className="body text-text-secondary">
+        <Card className="text-center space-y-md max-w-md mx-auto">
+          <div className="text-3xl mb-4 animate-pulse">⏳</div>
+          <h4 className="heading-text mb-2">Waiting for Opponent</h4>
+          <p className="body-text text-text-secondary mb-4">
             Share this game with your opponent to start playing!
           </p>
-        </div>
+          <div className="flex justify-center">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(`Game ID: ${gameState.gameId}`);
+                alert('Game ID copied to clipboard!');
+              }}
+              icon={
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                  <path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V12.5a1.5 1.5 0 01-1.5 1.5h-1v-3.379a3 3 0 00-.879-2.121L10.5 5.379A3 3 0 008.379 4.5H7v-1z" />
+                  <path d="M4.5 6A1.5 1.5 0 003 7.5v9A1.5 1.5 0 004.5 18h7a1.5 1.5 0 001.5-1.5v-5.879a1.5 1.5 0 00-.44-1.06L9.44 6.439A1.5 1.5 0 008.378 6H4.5z" />
+                </svg>
+              }
+            >
+              Copy Game ID
+            </Button>
+          </div>
+        </Card>
       )}
 
       {gameState.status === 'finished' && (
-        <div className="text-center">
-          <button
+        <div className="text-center mt-6">
+          <Button
+            variant="primary"
             onClick={() => window.location.reload()}
-            className="btn-primary"
+            icon={
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clipRule="evenodd" />
+              </svg>
+            }
           >
             Play Again
-          </button>
+          </Button>
         </div>
       )}
     </div>

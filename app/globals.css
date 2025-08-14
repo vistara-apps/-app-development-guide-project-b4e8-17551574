@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,53 +5,121 @@
 @layer base {
   :root {
     --primary: 240 70% 50%;
+    --primary-light: 240 70% 95%;
+    --primary-dark: 240 70% 40%;
     --accent: 180 70% 50%;
+    --accent-light: 180 70% 95%;
+    --accent-dark: 180 70% 40%;
+    --success: 145 70% 50%;
+    --success-light: 145 70% 95%;
+    --warning: 45 90% 50%;
+    --warning-light: 45 90% 95%;
+    --error: 0 70% 50%;
+    --error-light: 0 70% 95%;
     --bg: 220 20% 98%;
     --surface: 220 20% 100%;
+    --surface-hover: 220 20% 96%;
     --text-primary: 220 20% 15%;
     --text-secondary: 220 20% 40%;
+    --text-tertiary: 220 20% 60%;
+    --border-light: 220 20% 90%;
+    --border-medium: 220 20% 80%;
+  }
+  
+  html {
+    @apply scroll-smooth antialiased;
   }
   
   body {
-    @apply bg-bg text-text-primary font-sans;
+    @apply bg-bg text-text-primary font-sans min-h-screen;
+  }
+
+  /* Improve focus styles for better accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2;
+  }
+
+  /* Improve default form elements */
+  input, select, textarea {
+    @apply px-4 py-2 rounded-md border border-border-medium bg-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-fast;
   }
 }
 
 @layer components {
+  /* Button Variants */
   .btn-primary {
-    @apply bg-primary hover:bg-primary/90 text-white px-4 py-3 rounded-md transition-all duration-fast ease-default shadow-sm hover:shadow-md active:scale-95;
+    @apply bg-primary hover:bg-primary-dark text-white px-4 py-3 rounded-md transition-all duration-fast ease-default shadow-button hover:shadow-button-hover active:scale-95 font-medium;
   }
   
   .btn-secondary {
-    @apply bg-surface hover:bg-gray-50 text-text-primary border border-gray-200 px-4 py-3 rounded-md transition-all duration-fast ease-default shadow-sm hover:shadow-md active:scale-95;
+    @apply bg-surface hover:bg-surface-hover text-text-primary border border-border-medium px-4 py-3 rounded-md transition-all duration-fast ease-default shadow-button hover:shadow-button-hover active:scale-95 font-medium;
+  }
+  
+  .btn-accent {
+    @apply bg-accent hover:bg-accent-dark text-white px-4 py-3 rounded-md transition-all duration-fast ease-default shadow-button hover:shadow-button-hover active:scale-95 font-medium;
+  }
+  
+  .btn-outline {
+    @apply bg-transparent hover:bg-primary-light text-primary border border-primary px-4 py-3 rounded-md transition-all duration-fast ease-default active:scale-95 font-medium;
   }
   
   .btn-icon {
-    @apply bg-surface hover:bg-gray-50 text-text-primary border border-gray-200 p-3 rounded-md transition-all duration-fast ease-default shadow-sm hover:shadow-md active:scale-95;
+    @apply bg-surface hover:bg-surface-hover text-text-primary border border-border-medium p-3 rounded-md transition-all duration-fast ease-default shadow-button hover:shadow-button-hover active:scale-95;
   }
 
+  .btn-disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Card Variants */
   .card {
-    @apply bg-surface border border-gray-100 rounded-lg p-6 shadow-card;
+    @apply bg-surface border border-border-light rounded-lg p-6 shadow-card hover:shadow-card-hover transition-shadow duration-base;
   }
 
+  .card-hover {
+    @apply hover:border-primary/30 hover:shadow-card-hover transition-all duration-base;
+  }
+
+  .card-accent {
+    @apply border-accent/20 bg-accent-light;
+  }
+
+  .card-success {
+    @apply border-success/20 bg-success-light;
+  }
+
+  .card-warning {
+    @apply border-warning/20 bg-warning-light;
+  }
+
+  .card-error {
+    @apply border-error/20 bg-error-light;
+  }
+
+  /* Game Elements */
   .move-button {
-    @apply w-20 h-20 rounded-lg border-2 border-gray-200 flex items-center justify-center text-2xl transition-all duration-fast ease-default hover:border-primary hover:bg-primary/5 active:scale-95;
+    @apply w-20 h-20 rounded-lg border-2 border-border-medium flex items-center justify-center text-2xl transition-all duration-fast ease-bounce hover:border-primary hover:bg-primary-light active:scale-95 shadow-button hover:shadow-button-hover;
   }
 
   .move-button.selected {
-    @apply border-primary bg-primary/10;
+    @apply border-primary bg-primary-light shadow-button-hover;
   }
 
   .move-button.winner {
-    @apply border-green-500 bg-green-50 animate-bounce-scale;
+    @apply border-success bg-success-light animate-bounce-scale shadow-button-hover;
   }
 
+  /* Typography */
   .display-text {
-    @apply text-3xl font-semibold;
+    @apply text-4xl font-bold tracking-tight;
   }
 
   .heading-text {
-    @apply text-xl font-bold;
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  .subheading-text {
+    @apply text-xl font-medium;
   }
 
   .body-text {
@@ -62,8 +129,48 @@
   .caption-text {
     @apply text-sm text-text-secondary;
   }
+
+  /* Form Elements */
+  .input-field {
+    @apply px-4 py-2 rounded-md border border-border-medium bg-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-fast w-full;
+  }
+
+  .input-label {
+    @apply block text-sm font-medium text-text-secondary mb-1;
+  }
+
+  /* Layout Helpers */
+  .container-narrow {
+    @apply max-w-2xl mx-auto px-4;
+  }
+
+  .container-wide {
+    @apply max-w-4xl mx-auto px-4;
+  }
+
+  /* Status Indicators */
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .status-badge-success {
+    @apply bg-success-light text-success;
+  }
+
+  .status-badge-warning {
+    @apply bg-warning-light text-warning;
+  }
+
+  .status-badge-error {
+    @apply bg-error-light text-error;
+  }
+
+  .status-badge-info {
+    @apply bg-primary-light text-primary;
+  }
 }
 
+/* Animation Keyframes */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -74,7 +181,29 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes slideDown {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideLeft {
+  from { transform: translateX(10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideRight {
+  from { transform: translateX(-10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 @keyframes bounceScale {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
