@@ -10,7 +10,7 @@
     "subtitle": "Built with Zara",
     "description": "Farcaster RPS Showdown is a Base Mini App built with Zara.",
     "iconUrl": "https://0co.to/images/zara-2.png",
-    "homeUrl": "https://b4e88840b6f24741acfae8ffcf03572a-g454-qk10drp0w-vistara.vercel.app",
+    "homeUrl": "https://b4e88840b6f24741acfae8ffcf03572a-gfj2-9zmflr81g-vistara.vercel.app",
     "splashImageUrl": "https://b4e88840b6f24741acfae8ffcf03572a-g454-qk10drp0w-vistara.vercel.app/splash.png",
     "splashBackgroundColor": "#000000",
     "heroImageUrl": "https://b4e88840b6f24741acfae8ffcf03572a-g454-qk10drp0w-vistara.vercel.app/image.png",
@@ -25,6 +25,6 @@
       "miniapp",
       "onchainkit"
     ],
-    "webhookUrl": "https://b4e88840b6f24741acfae8ffcf03572a-g454-qk10drp0w-vistara.vercel.app/api/webhook"
+    "webhookUrl": "https://b4e88840b6f24741acfae8ffcf03572a-gfj2-9zmflr81g-vistara.vercel.app/api/webhook"
   }
 }
