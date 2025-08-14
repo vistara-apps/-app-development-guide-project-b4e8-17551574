@@ -1,204 +1,186 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
-import { MoveSelector } from "./MoveSelector";
-import { StatusMessage } from "./StatusMessage";
-import { FrameButton } from "./FrameButton";
 
 interface GameBoardProps {
   gameId?: string;
-  isInitiator?: boolean;
-  onGameStart?: (opponentFid: string) => void;
-  onMakeMove?: (move: "rock" | "paper" | "scissors") => void;
+  onGameStart: (gameId: string) => void;
+  onMakeMove: (move: string) => void;
 }
-
-type GameStatus = "waiting" | "playing" | "finished";
-type Move = "rock" | "paper" | "scissors";
 
 interface GameState {
   gameId: string;
   initiatorFid: string;
   opponentFid: string;
-  initiatorMove?: Move;
-  opponentMove?: Move;
-  status: GameStatus;
+  initiatorMove?: string;
+  opponentMove?: string;
+  status: 'waiting' | 'playing' | 'finished';
   winnerFid?: string;
 }
 
-export function GameBoard({ 
-  gameId, 
-  isInitiator, 
-  onGameStart, 
-  onMakeMove 
-}: GameBoardProps) {
+export function GameBoard({ gameId, onGameStart, onMakeMove }: GameBoardProps) {
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [selectedMove, setSelectedMove] = useState<Move | null>(null);
-  const [opponentFid, setOpponentFid] = useState("");
+  const [selectedMove, setSelectedMove] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Simulate game state for demo
+  const moves = [
+    { id: "rock", name: "Rock", emoji: "🗿", beats: "scissors" },
+    { id: "paper", name: "Paper", emoji: "📄", beats: "rock" },
+    { id: "scissors", name: "Scissors", emoji: "✂️", beats: "paper" },
+  ];
+
   useEffect(() => {
     if (gameId) {
-      // In a real app, this would fetch from your backend/Supabase
-      setGameState({
-        gameId,
-        initiatorFid: "123",
-        opponentFid: "456",
-        status: "playing"
-      });
+      fetchGameState();
     }
   }, [gameId]);
 
-  const handleStartGame = () => {
-    if (!opponentFid.trim()) return;
+  const fetchGameState = async () => {
+    if (!gameId) return;
     
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      onGameStart?.(opponentFid);
-      setIsLoading(false);
-    }, 1000);
+    try {
+      const response = await fetch(`/api/game/${gameId}`);
+      if (response.ok) {
+        const game = await response.json();
+        setGameState(game);
+      }
+    } catch (error) {
+      console.error('Error fetching game state:', error);
+    }
   };
 
-  const handleMoveSelect = (move: Move) => {
+  const handleMoveSelection = async (move: string) => {
     setSelectedMove(move);
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      onMakeMove?.(move);
+    try {
+      await onMakeMove(move);
+      await fetchGameState();
+    } catch (error) {
+      console.error('Error making move:', error);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  const getGameResult = () => {
-    if (!gameState?.initiatorMove || !gameState?.opponentMove) return null;
+  const getWinnerMessage = () => {
+    if (!gameState || gameState.status !== 'finished') return "";
     
-    const { initiatorMove, opponentMove } = gameState;
+    if (!gameState.winnerFid) return "It's a tie! 🤝";
     
-    if (initiatorMove === opponentMove) return "tie";
-    
-    const winConditions = {
-      rock: "scissors",
-      paper: "rock", 
-      scissors: "paper"
-    };
-    
-    return winConditions[initiatorMove] === opponentMove ? "initiator" : "opponent";
+    return `Player ${gameState.winnerFid} wins! 🎉`;
   };
 
-  const result = getGameResult();
+  const getMoveEmoji = (move?: string) => {
+    const moveData = moves.find(m => m.id === move);
+    return moveData ? moveData.emoji : "❓";
+  };
 
-  if (!gameState && !gameId) {
+  if (!gameId) {
     return (
-      <div className="card space-y-4">
-        <div className="display-text text-center">🎮 Start New Game</div>
-        <div className="space-y-3">
-          <div>
-            <label className="body-text font-medium block mb-2">
-              Opponent's FID:
-            </label>
-            <input
-              type="text"
-              value={opponentFid}
-              onChange={(e) => setOpponentFid(e.target.value)}
-              placeholder="Enter FID to challenge"
-              className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
-          <FrameButton
-            onClick={handleStartGame}
-            disabled={!opponentFid.trim() || isLoading}
-            className="w-full"
-          >
-            {isLoading ? "Starting Game..." : "Challenge Player"}
-          </FrameButton>
-        </div>
+      <div className="card text-center space-y-lg max-w-md mx-auto">
+        <div className="text-4xl">🎮</div>
+        <h3 className="heading">No Active Game</h3>
+        <p className="body text-text-secondary">
+          Start a new game from the home screen to begin playing!
+        </p>
       </div>
     );
   }
 
-  if (gameState?.status === "waiting") {
+  if (!gameState) {
     return (
-      <div className="card space-y-4">
-        <StatusMessage variant="info">
-          Waiting for opponent to join the game...
-        </StatusMessage>
-        <div className="text-center caption-text">
-          Game ID: {gameState.gameId}
-        </div>
-      </div>
-    );
-  }
-
-  if (gameState?.status === "finished" || result) {
-    const winningMove = result === "initiator" ? gameState?.initiatorMove : 
-                      result === "opponent" ? gameState?.opponentMove : null;
-    
-    return (
-      <div className="card space-y-6">
-        <StatusMessage 
-          variant={result === "tie" ? "info" : "success"}
-        >
-          {result === "tie" ? "It's a tie! 🤝" : 
-           result === "initiator" ? "Initiator wins! 🎉" : 
-           "Opponent wins! 🎉"}
-        </StatusMessage>
-        
-        <MoveSelector
-          selectedMove={null}
-          onMoveSelect={() => {}}
-          disabled={true}
-          showResult={true}
-          winningMove={winningMove}
-        />
-        
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <div className="space-y-2">
-            <div className="caption-text">Initiator</div>
-            <div className="text-2xl">{gameState?.initiatorMove ? 
-              (gameState.initiatorMove === "rock" ? "🪨" : 
-               gameState.initiatorMove === "paper" ? "📄" : "✂️") : "?"}</div>
-          </div>
-          <div className="space-y-2">
-            <div className="caption-text">Opponent</div>
-            <div className="text-2xl">{gameState?.opponentMove ? 
-              (gameState.opponentMove === "rock" ? "🪨" : 
-               gameState.opponentMove === "paper" ? "📄" : "✂️") : "?"}</div>
-          </div>
-        </div>
-        
-        <FrameButton 
-          variant="secondary" 
-          className="w-full"
-          onClick={() => window.location.reload()}
-        >
-          Play Again
-        </FrameButton>
+      <div className="card text-center space-y-md max-w-md mx-auto">
+        <div className="animate-spin text-2xl">⏳</div>
+        <p className="body">Loading game...</p>
       </div>
     );
   }
 
   return (
-    <div className="card space-y-6">
-      <div className="text-center">
-        <div className="display-text">🎮 RPS Showdown</div>
-        <div className="caption-text mt-2">
-          Game vs FID: {gameState?.opponentFid}
+    <div className="space-y-lg animate-fade-in">
+      <div className="card text-center space-y-md max-w-lg mx-auto">
+        <h3 className="heading">Game #{gameState.gameId.slice(0, 8)}</h3>
+        
+        <div className="flex justify-between items-center py-md">
+          <div className="text-center space-y-sm">
+            <div className="text-2xl">{getMoveEmoji(gameState.initiatorMove)}</div>
+            <p className="caption">Player {gameState.initiatorFid}</p>
+            <p className="text-xs text-text-secondary">
+              {gameState.initiatorMove ? "Move made" : "Waiting..."}
+            </p>
+          </div>
+          
+          <div className="text-3xl text-text-secondary">VS</div>
+          
+          <div className="text-center space-y-sm">
+            <div className="text-2xl">{getMoveEmoji(gameState.opponentMove)}</div>
+            <p className="caption">Player {gameState.opponentFid}</p>
+            <p className="text-xs text-text-secondary">
+              {gameState.opponentMove ? "Move made" : "Waiting..."}
+            </p>
+          </div>
         </div>
+
+        {gameState.status === 'finished' && (
+          <div className="bg-accent/10 border border-accent/20 rounded-lg p-md">
+            <p className="heading text-accent">{getWinnerMessage()}</p>
+          </div>
+        )}
       </div>
-      
-      {isLoading ? (
-        <StatusMessage variant="info">
-          Processing your move...
-        </StatusMessage>
-      ) : (
-        <MoveSelector
-          selectedMove={selectedMove}
-          onMoveSelect={handleMoveSelect}
-          disabled={isLoading}
-        />
+
+      {gameState.status === 'playing' && (
+        <div className="card max-w-lg mx-auto space-y-lg">
+          <h4 className="heading text-center">Choose Your Move</h4>
+          
+          <div className="grid grid-cols-3 gap-md">
+            {moves.map((move) => (
+              <button
+                key={move.id}
+                onClick={() => handleMoveSelection(move.id)}
+                disabled={isLoading || selectedMove !== ""}
+                className={`move-selector ${move.id} ${
+                  selectedMove === move.id ? "selected" : ""
+                }`}
+              >
+                <div className="text-4xl mb-2">{move.emoji}</div>
+                <div className="font-medium">{move.name}</div>
+              </button>
+            ))}
+          </div>
+
+          {selectedMove && (
+            <div className="text-center">
+              <p className="caption text-accent">
+                You selected {moves.find(m => m.id === selectedMove)?.name}!
+              </p>
+              <p className="text-xs text-text-secondary mt-1">
+                Waiting for opponent...
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {gameState.status === 'waiting' && (
+        <div className="card text-center space-y-md max-w-md mx-auto">
+          <div className="text-3xl">⏳</div>
+          <h4 className="heading">Waiting for Opponent</h4>
+          <p className="body text-text-secondary">
+            Share this game with your opponent to start playing!
+          </p>
+        </div>
+      )}
+
+      {gameState.status === 'finished' && (
+        <div className="text-center">
+          <button
+            onClick={() => window.location.reload()}
+            className="btn-primary"
+          >
+            Play Again
+          </button>
+        </div>
       )}
     </div>
   );

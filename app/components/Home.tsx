@@ -1,112 +1,133 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "./ui/Button";
-import { Card } from "./ui/Card";
-import { StatusMessage } from "./ui/StatusMessage";
 
 interface HomeProps {
+  onStartGame: (gameId: string) => void;
   setActiveTab: (tab: string) => void;
 }
 
-export function Home({ setActiveTab }: HomeProps) {
-  const [isCreatingGame, setIsCreatingGame] = useState(false);
-  const [gameCode, setGameCode] = useState("");
+export function Home({ onStartGame, setActiveTab }: HomeProps) {
+  const [opponentFid, setOpponentFid] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleCreateGame = async () => {
-    setIsCreatingGame(true);
-    // Simulate game creation
-    setTimeout(() => {
-      setGameCode("RPS" + Math.random().toString(36).substr(2, 6).toUpperCase());
-      setIsCreatingGame(false);
-    }, 1000);
-  };
+    if (!opponentFid.trim()) return;
+    
+    setIsCreating(true);
+    try {
+      const response = await fetch('/api/game/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          opponentFid: opponentFid.trim(),
+        }),
+      });
 
-  const handleJoinGame = () => {
-    setActiveTab("game");
+      if (!response.ok) {
+        throw new Error('Failed to create game');
+      }
+
+      const result = await response.json();
+      onStartGame(result.gameId);
+    } catch (error) {
+      console.error('Error creating game:', error);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-semibold text-primary">
-          RPS Showdown
-        </h1>
-        <p className="text-base leading-7 text-secondary">
-          Challenge your Farcaster friends to Rock, Paper, Scissors
+    <div className="space-y-lg animate-fade-in">
+      <div className="text-center space-y-md">
+        <div className="text-6xl mb-md">✂️📄🗿</div>
+        <h2 className="display text-primary">Welcome to RPS Showdown</h2>
+        <p className="body text-text-secondary max-w-md mx-auto">
+          Challenge your Farcaster friends to Rock, Paper, Scissors right in your feed. 
+          Start a game and show off your skills!
         </p>
       </div>
 
-      <div className="grid gap-4">
-        <Card className="p-6">
-          <h2 className="text-xl font-bold mb-4">Quick Start</h2>
-          <div className="space-y-4">
-            <Button
-              variant="primary"
-              onClick={handleCreateGame}
-              disabled={isCreatingGame}
-              className="w-full"
-            >
-              {isCreatingGame ? "Creating..." : "Create New Game"}
-            </Button>
-            
-            {gameCode && (
-              <StatusMessage variant="success">
-                Game created! Code: {gameCode}
-              </StatusMessage>
-            )}
-
-            <div className="text-center text-sm text-secondary">or</div>
-
-            <Button
-              variant="secondary"
-              onClick={handleJoinGame}
-              className="w-full"
-            >
-              Join Existing Game
-            </Button>
+      <div className="card max-w-md mx-auto space-y-lg">
+        <h3 className="heading text-center">Start New Game</h3>
+        
+        <div className="space-y-md">
+          <div>
+            <label htmlFor="opponent" className="block caption mb-2">
+              Opponent FID
+            </label>
+            <input
+              id="opponent"
+              type="text"
+              value={opponentFid}
+              onChange={(e) => setOpponentFid(e.target.value)}
+              placeholder="Enter opponent's FID"
+              className="input-field w-full"
+              disabled={isCreating}
+            />
           </div>
-        </Card>
+          
+          <button
+            onClick={handleCreateGame}
+            disabled={!opponentFid.trim() || isCreating}
+            className="btn-primary w-full"
+          >
+            {isCreating ? "Creating Game..." : "Challenge Player"}
+          </button>
+        </div>
+      </div>
 
-        <Card className="p-6">
-          <h2 className="text-xl font-bold mb-4">How to Play</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
-                1
-              </div>
-              <p>Create a game or join with a friend's code</p>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
-                2
-              </div>
-              <p>Choose Rock, Paper, or Scissors</p>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
-                3
-              </div>
-              <p>See who wins and climb the leaderboard!</p>
-            </div>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-md max-w-2xl mx-auto">
+        <div className="card text-center space-y-sm">
+          <div className="text-3xl">🎮</div>
+          <h4 className="heading">Quick Play</h4>
+          <p className="caption">
+            Jump into a game instantly with random opponents
+          </p>
+          <button 
+            onClick={() => setActiveTab("game")}
+            className="btn-secondary w-full"
+          >
+            Quick Match
+          </button>
+        </div>
 
-        <div className="flex space-x-2">
-          <Button
-            variant="secondary"
+        <div className="card text-center space-y-sm">
+          <div className="text-3xl">🏆</div>
+          <h4 className="heading">Leaderboard</h4>
+          <p className="caption">
+            Check your ranking and see top players
+          </p>
+          <button 
             onClick={() => setActiveTab("leaderboard")}
-            className="flex-1"
+            className="btn-secondary w-full"
           >
-            View Leaderboard
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setActiveTab("stats")}
-            className="flex-1"
-          >
-            My Stats
-          </Button>
+            View Rankings
+          </button>
+        </div>
+      </div>
+
+      <div className="card bg-accent/5 border-accent/20 max-w-2xl mx-auto">
+        <h4 className="heading text-accent mb-md">How to Play</h4>
+        <div className="space-y-sm text-sm">
+          <div className="flex items-start space-x-2">
+            <span className="text-accent font-bold">1.</span>
+            <span>Challenge a friend by entering their FID</span>
+          </div>
+          <div className="flex items-start space-x-2">
+            <span className="text-accent font-bold">2.</span>
+            <span>Both players select Rock, Paper, or Scissors</span>
+          </div>
+          <div className="flex items-start space-x-2">
+            <span className="text-accent font-bold">3.</span>
+            <span>Winner is determined: Rock beats Scissors, Paper beats Rock, Scissors beats Paper</span>
+          </div>
+          <div className="flex items-start space-x-2">
+            <span className="text-accent font-bold">4.</span>
+            <span>Climb the leaderboard and earn bragging rights!</span>
+          </div>
         </div>
       </div>
     </div>
